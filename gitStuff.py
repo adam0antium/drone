@@ -1,5 +1,7 @@
-# gitStuff.py - git committing changes
+# gitStuff.py - git admin file
 
+#to get the complete repo use:
+#   git clone https://github.com/adam0antium/drone.git
 
 from subprocess import call
 
