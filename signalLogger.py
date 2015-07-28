@@ -49,6 +49,7 @@ def OpenLogFile():
     return logFile
 
 def main():
+    
     try:
         sys.argv = [sys.argv[0], '--simple']
         print speedtest_cli.speedtest()
