@@ -93,7 +93,7 @@ def ModemLogin():
             token = sessioncookie.group(0).split('%2D')
             time.sleep(2)
             targetUrl = "http://192.168.1.1/Forms/config"
-            postdata = "token=" + token[1] + "&ok_redirect=%2Findex.html&err_redirect=%2Findex.html&session.password=mullet"
+            postdata = "token=" + token[1] + "&ok_redirect=%2Findex.html&err_redirect=%2Findex.html&session.password=admin"
             headers = {"Cookie": token[0] + "-" + token[1]}
             req = urllib2.Request(targetUrl, postdata, headers)
             req.get_method = lambda: 'POST'
