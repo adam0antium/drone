@@ -1,9 +1,16 @@
 #SignalLogger.py - to run on Raspberry Pi B+ on startup and log 4G signal data from a connected netgear 785s wifi modem.
+# - written for Python2.7
+# - extra python packages via RPi apt-get:
+#       python-lxml
+#       python-requests
+# - extra python packages via pip:
+#       speedtest-cli
 
 from lxml.html import fromstring
 import requests
 import sys
 import os
+import speedtest_cli
 
 
   
@@ -43,11 +50,13 @@ def OpenLogFile():
 
 def main():
     try:
-        sessionCookie = Login()
+        sys.argv = [sys.argv[0], '--simple']
+        print speedtest_cli.speedtest()
+#        sessionCookie = Login()
 #        logFile = OpenLogFile()
-        for x in range(0,100):
+#        for x in range(0,100):
 #            logFile.write(GetSigData(sessionCookie))
-             print GetSigData(sessionCookie)
+#             print GetSigData(sessionCookie)
     except:
         print "login problem: ", sys.exc_info()[0]
 
