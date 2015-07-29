@@ -51,13 +51,15 @@ def OpenLogFile():
 def main():
     
     try:
-        sys.argv = [sys.argv[0], '--simple']
-        print speedtest_cli.speedtest()
-#        sessionCookie = Login()
+        from subprocess import call
+        call(["dhclient", "eth1"])
+        sessionCookie = Login()
 #        logFile = OpenLogFile()
-#        for x in range(0,100):
+        for x in range(0,100):
 #            logFile.write(GetSigData(sessionCookie))
-#             print GetSigData(sessionCookie)
+            print GetSigData(sessionCookie)
+            sys.argv = [sys.argv[0], '--simple']
+            print speedtest_cli.speedtest()
     except:
         print "login problem: ", sys.exc_info()[0]
 
