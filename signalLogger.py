@@ -5,6 +5,10 @@
 #       python-requests
 # - extra python packages via pip:
 #       speedtest-cli
+# - autorun implemented by cron using:
+#        crontab -e
+#   then adding:
+#       @reboot python /home/pi/Desktop/signalLogger.py
 
 from lxml.html import fromstring
 import requests
@@ -44,7 +48,7 @@ def OpenLogFile():
     logfileName = 'logfile0.log'
     while os.path.isfile(logfileName):
         lognumber += 1
-        logfileName = '/home/pi/Desktop/droneLogFiles/logfile' + str(lognumber) + '.log'
+        logfileName = '/home/pi/Desktop/logfile' + str(lognumber) + '.log'
     logFile = open(logfileName , 'w')
     return logFile
 
@@ -52,14 +56,14 @@ def main():
     
     try:
         from subprocess import call
-        call(["dhclient", "eth1"])
+        call(["sudo", "dhclient", "eth1"])
         sessionCookie = Login()
-#        logFile = OpenLogFile()
-        for x in range(0,100):
-#            logFile.write(GetSigData(sessionCookie))
+        logFile = OpenLogFile()
+        for x in range(0,1):
+            logFile.write(GetSigData(sessionCookie))
             print GetSigData(sessionCookie)
-            sys.argv = [sys.argv[0], '--simple']
-            print speedtest_cli.speedtest()
+ #           sys.argv = [sys.argv[0], '--simple']
+ #           print speedtest_cli.speedtest()
     except:
         print "login problem: ", sys.exc_info()[0]
 
