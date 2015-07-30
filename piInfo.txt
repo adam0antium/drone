@@ -1,0 +1,10 @@
+piInfo.txt - reminders and info on how to do useful stuff with the pi 
+
+- Time and Date
+To set the correct timezone use:
+	$ sudo dpkg-reconfigure tzdata
+and follow the prompts.
+To restart the time service:
+	$ sudo service ntp restart
+
+ 
