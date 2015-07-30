@@ -50,13 +50,20 @@ def OpenLogFile():
         lognumber += 1
         logfileName = '/home/pi/Desktop/logfile' + str(lognumber) + '.log'
     logFile = open(logfileName , 'w')
+    #timestamp the logfile (maybe put this in filename)
+    from datetime import datetime
+    logFile.write(str(datetime.now()) + "\n")
+    logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
 
 def main():
     
     try:
         from subprocess import call
+        #turn on the internet
         call(["sudo", "dhclient", "eth1"])
+        #update the clock (not sure if this is effective)
+        call(["sudo", "service", "ntp", "restart"])
         sessionCookie = Login()
         logFile = OpenLogFile()
         for x in range(0,1):
