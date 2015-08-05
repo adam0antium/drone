@@ -19,15 +19,25 @@ import speedtest_cli
 
   
 def GetSigData(loggedInCookie):
+    #get signal data from 785S homepage
     targetUrl = "http://192.168.1.1/index.html"    
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
     doc = fromstring(homePage.text)
-    logline = "4G/LTE data:" \
-        + "    RSRP: " \
-        + doc.find_class('m_wwan_signalStrength_rsrp')[0].text \
-        + "    RSRQ: " \
-        + doc.find_class('m_wwan_signalStrength_rsrq')[0].text \
-        + "\n"
+    altitude = "##TODO##"
+    rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
+    rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
+    
+    #get signal data from speedtest
+    sys.argv = [sys.argv[0], '--simple']
+    print speedtest_cli.speedtest()
+
+    #redirect ??
+
+    upSpeed = "##TODO##"
+    downSpeed = "##TODO##"
+    ping = "##TODO##"
+    droppedPackets = "##TODO"
+    logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + ping + "," + droppedPackets + "\n"
     return logline
             
 def Login():
@@ -44,18 +54,19 @@ def Login():
     return sessionCookie
 
 def OpenLogFile():
+    if not os.path.isdir('/home/pi/Desktop/droneLogs'):
+        os.makedirs('/home/pi/Desktop/droneLogs')
     lognumber = 0    
-    logfileName = '/home/pi/Desktop/logfile0.log'
+    logfileName = '/home/pi/Desktop/droneLogs/logfile0.log'
     while os.path.isfile(logfileName):
         lognumber += 1
-        logfileName = '/home/pi/Desktop/logfile' + str(lognumber) + '.log'
+        logfileName = '/home/pi/Desktop/droneLogs/logfile' + str(lognumber) + '.log'
     logFile = open(logfileName , 'w')
     #timestamp the logfile (maybe put this in filename)
     from datetime import datetime
     logFile.write(str(datetime.now()) + "\n")
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
-################### why is logfile saving in "drone" directory?###############################
 
 def main():
     
@@ -71,9 +82,7 @@ def main():
         logFile = OpenLogFile()
         for x in range(0,1):
             logFile.write(GetSigData(sessionCookie))
-            print GetSigData(sessionCookie)
- #           sys.argv = [sys.argv[0], '--simple']
- #           print speedtest_cli.speedtest()
+            #print GetSigData(sessionCookie)
     except:
         print "login problem: ", sys.exc_info()[0]
 
