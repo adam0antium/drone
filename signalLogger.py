@@ -45,7 +45,7 @@ def Login():
 
 def OpenLogFile():
     lognumber = 0    
-    logfileName = 'logfile0.log'
+    logfileName = '/home/pi/Desktop/logfile0.log'
     while os.path.isfile(logfileName):
         lognumber += 1
         logfileName = '/home/pi/Desktop/logfile' + str(lognumber) + '.log'
@@ -55,6 +55,7 @@ def OpenLogFile():
     logFile.write(str(datetime.now()) + "\n")
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
+################### why is logfile saving in "drone" directory?###############################
 
 def main():
     
@@ -63,7 +64,9 @@ def main():
         #turn on the internet
         call(["sudo", "dhclient", "eth1"])
         #update the clock (not sure if this is effective)
-        call(["sudo", "service", "ntp", "restart"])
+        #call(["sudo", "service", "ntp", "restart"])
+        import time
+        time.sleep(10)
         sessionCookie = Login()
         logFile = OpenLogFile()
         for x in range(0,1):
