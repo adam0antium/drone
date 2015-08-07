@@ -3,6 +3,7 @@
 # - extra python packages via RPi apt-get:
 #       python-lxml
 #       python-requests
+#       python-ethtool
 # - extra python packages via pip:
 #       speedtest-cli
 # - autorun implemented by cron using:
