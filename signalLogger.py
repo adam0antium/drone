@@ -10,32 +10,45 @@
 #   then adding:
 #       @reboot python /home/pi/Desktop/signalLogger.py
 
-from lxml.html import fromstring
+import lxml.html
 import requests
 import sys
 import os
 import speedtest_cli
+import subprocess
+import cStringIO
+import datetime
+import ethtool
+import time
 
-
-  
 def GetSigData(loggedInCookie):
     #get signal data from 785S homepage
     targetUrl = "http://192.168.1.1/index.html"    
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
-    doc = fromstring(homePage.text)
+    doc = lxml.html.fromstring(homePage.text)
     altitude = "##TODO##"
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
     
-    #get signal data from speedtest
+    #store original stdout so that it can be restored         
+    oldStdOut = sys.stdout
+
+    #create an alternate stream to divert stdout into
+    speedTestOutput = cStringIO.StringIO()    
+    sys.stdout= speedTestOutput    
+
+    #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
     sys.argv = [sys.argv[0], '--simple']
-    print speedtest_cli.speedtest()
+    speedtest_cli.speedtest()
 
-    #redirect ??
-
-    upSpeed = "##TODO##"
-    downSpeed = "##TODO##"
-    ping = "##TODO##"
+    #reset stdout to original 
+    sys.stdout = oldStdOut
+    
+    speeds = speedTestOutput.getvalue()
+    speedSplit = speeds.split("\n")
+    upSpeed = speedSplit[2].split(" ")[1]
+    downSpeed = speedSplit[1].split(" ")[1]
+    ping = speedSplit[0].split(" ")[1]
     droppedPackets = "##TODO"
     logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + ping + "," + droppedPackets + "\n"
     return logline
@@ -62,27 +75,32 @@ def OpenLogFile():
         lognumber += 1
         logfileName = '/home/pi/Desktop/droneLogs/logfile' + str(lognumber) + '.log'
     logFile = open(logfileName , 'w')
+    
     #timestamp the logfile (maybe put this in filename)
-    from datetime import datetime
-    logFile.write(str(datetime.now()) + "\n")
+    logFile.write(str(datetime.datetime.now()) + "\n")
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
 
 def main():
     
     try:
-        from subprocess import call
-        #turn on the internet
-        call(["sudo", "dhclient", "eth1"])
-        #update the clock (not sure if this is effective)
-        #call(["sudo", "service", "ntp", "restart"])
-        import time
+        #turn on the internet and check it's connected
+        subprocess.call(["sudo", "dhclient", "eth1"])
+        if not "eth1" in ethtool.get_active_devices():
+            print "error: eth1 connection is not working"
+ 
+        #update the clock 
+        call(["sudo", "service", "ntp", "restart"])
+
+        #wait for time to update
         time.sleep(10)
+        
         sessionCookie = Login()
         logFile = OpenLogFile()
         for x in range(0,1):
             logFile.write(GetSigData(sessionCookie))
             #print GetSigData(sessionCookie)
+        print "done"
     except:
         print "login problem: ", sys.exc_info()[0]
 

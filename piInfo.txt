@@ -1,5 +1,5 @@
-piInfo.txt - reminders and info on how to do useful stuff with the pi 
-
+piInfo.txt - reminders and info on how to do useful stuff with the pi and/or linux
+ 
 - Time and Date
 To set the correct timezone use:
 	$ sudo dpkg-reconfigure tzdata
@@ -7,4 +7,22 @@ and follow the prompts.
 To restart the time service:
 	$ sudo service ntp restart
 
- 
+- Automating Tasks
+Can use cron to automate things, for example:
+	$ crontab -e
+then adding to cron file:
+	@reboot python /home/pi/Desktop/signalLogger.py
+which will run the python logger at startup
+
+- Permissions
+Change permissions with chmod command, for example:
+	$ sudo chmod 777 piInfo.txt
+gives all permissions to everyone for piInfo.txt
+
+- OS shutdown
+Use shutdown or halt commands, eg.:
+	$ sudo shutdown -r now
+will restart. 
+	$ halt
+is just shortcut to halt.
+
