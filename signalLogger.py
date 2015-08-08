@@ -23,6 +23,7 @@ import ethtool
 import time
 
 def GetSigData(loggedInCookie):
+    #print "getsigdata"
     #get signal data from 785S homepage
     targetUrl = "http://192.168.1.1/index.html"    
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
@@ -55,6 +56,7 @@ def GetSigData(loggedInCookie):
     return logline
             
 def Login():
+    #print "Lodign"
     targetUrl = "http://192.168.1.1/index.html"
     configFormUrl = "http://192.168.1.1/Forms/config"
     unAuthResponse = requests.get(targetUrl)
@@ -68,6 +70,7 @@ def Login():
     return sessionCookie
 
 def OpenLogFile():
+    #print "OpenLogFile"
     if not os.path.isdir('/home/pi/Desktop/droneLogs'):
         os.makedirs('/home/pi/Desktop/droneLogs')
     lognumber = 0    
@@ -83,16 +86,16 @@ def OpenLogFile():
     return logFile
 
 def main():
-    
+    #print "main"
     try:
         #turn on the internet and check it's connected
         subprocess.call(["sudo", "dhclient", "eth1"])
         if not "eth1" in ethtool.get_active_devices():
             print "error: eth1 connection is not working"
- 
-        #update the clock 
-        call(["sudo", "service", "ntp", "restart"])
 
+
+        #update the clock 
+        subprocess.call(["sudo", "service", "ntp", "restart"])
         #wait for time to update
         time.sleep(10)
         
