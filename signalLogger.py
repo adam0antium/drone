@@ -4,12 +4,24 @@
 #       python-lxml
 #       python-requests
 #       python-ethtool
+#       python-gps
 # - extra python packages via pip:
 #       speedtest-cli
+# - extra external packages:
+#       gpsd
+#       gpsd-clients
 # - autorun implemented by cron using:
 #        crontab -e
 #   then adding:
 #       @reboot python /home/pi/Desktop/signalLogger.py
+# - to start gps stuff:
+#       $ sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+# - to check gps is running:
+#       $ cgps -s
+# - if gps throws timeout error restart by:
+#       $ sudo killall gpsd
+#   and redo above command to start.
+#
 
 import lxml.html
 import requests
@@ -21,6 +33,46 @@ import cStringIO
 import datetime
 import ethtool
 import time
+
+#gps stuff
+from gps import *
+import threading
+
+#cobbled together from multiple non-functioning examples, 
+class GpsThreader(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.gpsWatcher = gps(mode=WATCH_ENABLE)
+        self.data = None
+
+    def getData(self):
+        return self.data
+    
+    def run(self):
+        try:
+            while True:
+                self.data = self.gpsWatcher.next()
+        except StopIteration:
+            pass
+        
+
+def GetAltitude():
+    
+    gpsThread = GpsThreader()
+
+    ####why does this work? shouldn't it be 'run'?####
+    gpsThread.start()
+    
+    while(1):
+        #print type(gpsp.get_current_value())
+        out = gpsThread.getData()
+        print out
+        #gpsObject = gps(mode=WATCH_ENABLE)
+        #gpsObject.stream()
+        #print gpsObject.fix.altitude
+        #print gpsObject.next()
+    #print gpsp.get_current_value()
+    return "cmon"
 
 def GetSigData(loggedInCookie):
     #print "getsigdata"
@@ -88,12 +140,14 @@ def OpenLogFile():
 def main():
     #print "main"
     try:
+        print GetAltitude()
+
         #turn on the internet and check it's connected
         subprocess.call(["sudo", "dhclient", "eth1"])
         if not "eth1" in ethtool.get_active_devices():
             print "error: eth1 connection is not working"
-
-
+            sys.exit(1)
+            
         #update the clock 
         subprocess.call(["sudo", "service", "ntp", "restart"])
         #wait for time to update
