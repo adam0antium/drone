@@ -20,7 +20,7 @@
 #       $ cgps -s
 # - if gps throws timeout error restart by:
 #       $ sudo killall gpsd
-#   and redo above command to start.
+#   and redo above gpsd command to start.
 #
 
 import lxml.html
@@ -34,16 +34,17 @@ import datetime
 import ethtool
 import time
 
-#gps stuff
+#gps stuff, not sure why this doesn't work when I do 'import gps' then add 'gps.' to commands, should be equivalent
 from gps import *
 import threading
 
-#cobbled together from multiple non-functioning examples, 
 class GpsThreader(threading.Thread):
+    #class to handle the gps data-updating thread. 
     def __init__(self):
         threading.Thread.__init__(self)
         self.gpsWatcher = gps(mode=WATCH_ENABLE)
         self.data = None
+        self.gpsWatcher.next()
 
     def getData(self):
         return self.data
@@ -52,63 +53,70 @@ class GpsThreader(threading.Thread):
         try:
             while True:
                 self.data = self.gpsWatcher.next()
+            #a pause here might be good, depending on how quickly the gps is updating. Constant fetching may be unnecessary.
+                #time.sleep(5)
         except StopIteration:
             pass
-        
-
-def GetAltitude():
-    
+                
+def InitiateGps():
+    #initiate a new thread to keep track of latest gps data
+    print "IntitateGps()"
+    subprocess.call(["sudo", "killall", "gpsd"])
+    time.sleep(1)
+    subprocess.call(["sudo", "gpsd", "/dev/ttyUSB0", "-F", "/var/run/gpsd.sock"])
+    time.sleep(1)
     gpsThread = GpsThreader()
-
-    ####why does this work? shouldn't it be 'run'?####
     gpsThread.start()
+    return gpsThread
     
-    while(1):
-        #print type(gpsp.get_current_value())
-        out = gpsThread.getData()
-        print out
-        #gpsObject = gps(mode=WATCH_ENABLE)
-        #gpsObject.stream()
-        #print gpsObject.fix.altitude
-        #print gpsObject.next()
-    #print gpsp.get_current_value()
-    return "cmon"
+def GetAltitude(gpsThread):
+    #get the current altitude value from the gps thread.
+    print "GetAltitude()"
+    out = gpsThread.getData()
+    if out != None:
+        return str(out.get('alt'))   
 
-def GetSigData(loggedInCookie):
-    #print "getsigdata"
-    #get signal data from 785S homepage
-    targetUrl = "http://192.168.1.1/index.html"    
+def GetSigData(loggedInCookie, gpsThread):
+    #get signal data. Argument is cookie of admin-logged-in homepage.
+    print "GetSigData()"
+    targetUrl = "http://192.168.1.1/index.html"
+    print "1"
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
     doc = lxml.html.fromstring(homePage.text)
-    altitude = "##TODO##"
+    altitude = GetAltitude(gpsThread)
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
-    
+    print "2"
     #store original stdout so that it can be restored         
     oldStdOut = sys.stdout
-
+    print "22"
     #create an alternate stream to divert stdout into
     speedTestOutput = cStringIO.StringIO()    
+    print "222"
     sys.stdout= speedTestOutput    
-
     #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
     sys.argv = [sys.argv[0], '--simple']
     speedtest_cli.speedtest()
-
     #reset stdout to original 
     sys.stdout = oldStdOut
-    
+    print "5"
     speeds = speedTestOutput.getvalue()
+    print "6"
     speedSplit = speeds.split("\n")
+    print "7"
+    print speedSplit
     upSpeed = speedSplit[2].split(" ")[1]
     downSpeed = speedSplit[1].split(" ")[1]
     ping = speedSplit[0].split(" ")[1]
     droppedPackets = "##TODO"
+
     logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + ping + "," + droppedPackets + "\n"
+    print "5"
     return logline
             
 def Login():
-    #print "Lodign"
+    #login to 785S homepage as admin (settings data is only available as admin)
+    print "Login()"
     targetUrl = "http://192.168.1.1/index.html"
     configFormUrl = "http://192.168.1.1/Forms/config"
     unAuthResponse = requests.get(targetUrl)
@@ -122,7 +130,8 @@ def Login():
     return sessionCookie
 
 def OpenLogFile():
-    #print "OpenLogFile"
+    #set up the log file for writing to
+    print "OpenLogFile()"
     if not os.path.isdir('/home/pi/Desktop/droneLogs'):
         os.makedirs('/home/pi/Desktop/droneLogs')
     lognumber = 0    
@@ -137,30 +146,39 @@ def OpenLogFile():
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
 
+def ResetTime():
+    #update the clock 
+    print "ResetTime()"
+    subprocess.call(["sudo", "service", "ntp", "restart"])
+    #wait for time to update
+    time.sleep(10)
+
+def CheckInternet():
+    #turn on the internet and check it's connected
+    print "CheckInternet()"
+    subprocess.call(["sudo", "dhclient", "eth1"])
+    if not "eth1" in ethtool.get_active_devices():
+        print "error: eth1 connection is not working"
+        sys.exit(1)
+
+def StartLogging():
+    #looping logging function
+    print "StartLogging()"
+    sessionCookie = Login()
+    gpsThread = InitiateGps()
+    logFile = OpenLogFile()
+    for x in range(0,5):
+        logFile.write(GetSigData(sessionCookie, gpsThread))
+
 def main():
     #print "main"
     try:
-        print GetAltitude()
-
-        #turn on the internet and check it's connected
-        subprocess.call(["sudo", "dhclient", "eth1"])
-        if not "eth1" in ethtool.get_active_devices():
-            print "error: eth1 connection is not working"
-            sys.exit(1)
-            
-        #update the clock 
-        subprocess.call(["sudo", "service", "ntp", "restart"])
-        #wait for time to update
-        time.sleep(10)
-        
-        sessionCookie = Login()
-        logFile = OpenLogFile()
-        for x in range(0,1):
-            logFile.write(GetSigData(sessionCookie))
-            #print GetSigData(sessionCookie)
-        print "done"
+        CheckInternet()
+        ResetTime()
+        StartLogging()
     except:
-        print "login problem: ", sys.exc_info()[0]
+        print "Exception thrown: ", sys.exc_info()[0]
+        subprocess.call(["sudo", "killall", "gpsd"])
 
 if __name__ == "__main__":
     main()
