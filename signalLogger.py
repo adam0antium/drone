@@ -5,6 +5,7 @@
 #       python-requests
 #       python-ethtool
 #       python-gps
+#       (python-pip)
 # - extra python packages via pip:
 #       speedtest-cli
 # - extra external packages:
