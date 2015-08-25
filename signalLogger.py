@@ -8,6 +8,7 @@
 #       (python-pip)
 # - extra python packages via pip:
 #       speedtest-cli
+#       python-ping
 # - extra external packages:
 #       gpsd
 #       gpsd-clients
@@ -28,12 +29,13 @@ import lxml.html
 import requests
 import sys
 import os
-import speedtest_cli
+import speedtest_cli2
 import subprocess
 import cStringIO
 import datetime
 import ethtool
 import time
+import ping2
 
 #gps stuff, not sure why this doesn't work when I do 'import gps' then add 'gps.' to commands, should be equivalent
 from gps import *
@@ -84,7 +86,7 @@ def GetSigData(loggedInCookie, gpsThread):
     print "1"
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
     doc = lxml.html.fromstring(homePage.text)
-    altitude = GetAltitude(gpsThread)
+    altitude = str(GetAltitude(gpsThread))
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
     print "2"
@@ -97,22 +99,26 @@ def GetSigData(loggedInCookie, gpsThread):
     sys.stdout= speedTestOutput    
     #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
     sys.argv = [sys.argv[0], '--simple']
-    speedtest_cli.speedtest()
+    
+    speedtest_cli2.speedtest()
+    #pinging server for telstra speednet test
+    ping2.verbose_ping('203.39.77.13', count=10)
     #reset stdout to original 
     sys.stdout = oldStdOut
-    print "5"
     speeds = speedTestOutput.getvalue()
-    print "6"
+    print speeds
     speedSplit = speeds.split("\n")
-    print "7"
     print speedSplit
     upSpeed = speedSplit[2].split(" ")[1]
-    downSpeed = speedSplit[1].split(" ")[1]
-    ping = speedSplit[0].split(" ")[1]
-    droppedPackets = "##TODO"
-
-    logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + ping + "," + droppedPackets + "\n"
     print "5"
+    downSpeed = speedSplit[1].split(" ")[1]
+    print "6"
+    droppedPackets= speedSplit[3]
+    print "7"
+    pingTime = speedSplit[0].split(" ")[1]
+    print "8"
+    
+    logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + pingTime + "," + droppedPackets + "\n"
     return logline
             
 def Login():
@@ -174,9 +180,10 @@ def StartLogging():
 def main():
     #print "main"
     try:
-        CheckInternet()
-        ResetTime()
-        StartLogging()
+        #CheckInternet()
+        #ResetTime()
+        #StartLogging()
+        speedtest_cli2.speedtest()
     except:
         print "Exception thrown: ", sys.exc_info()[0]
         subprocess.call(["sudo", "killall", "gpsd"])
