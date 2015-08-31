@@ -432,7 +432,6 @@ def closestServers(client, all=False):
 
         # We were able to fetch and parse the list of speedtest.net servers
         if servers:
-            print servers
             break
 
     if not servers:
@@ -489,7 +488,7 @@ def getBestServer(servers):
     fastest = sorted(results.keys())[0]
     best = results[fastest]
     best['latency'] = fastest
-
+    #print best
     return best
 
 

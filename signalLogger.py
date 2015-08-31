@@ -98,7 +98,8 @@ def GetSigData(loggedInCookie, gpsThread):
     print "222"
     sys.stdout= speedTestOutput    
     #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
-    sys.argv = [sys.argv[0], '--simple']
+    #server argument 2225 specifies the telstra Melbourne server to test against
+    sys.argv = [sys.argv[0], '--simple', '--server',  '2225']
     
     speedtest_cli2.speedtest()
     #pinging server for telstra speednet test
@@ -106,17 +107,17 @@ def GetSigData(loggedInCookie, gpsThread):
     #reset stdout to original 
     sys.stdout = oldStdOut
     speeds = speedTestOutput.getvalue()
-    print speeds
+    #print speeds
     speedSplit = speeds.split("\n")
-    print speedSplit
+    #print speedSplit
     upSpeed = speedSplit[2].split(" ")[1]
-    print "5"
+    #print "5"
     downSpeed = speedSplit[1].split(" ")[1]
-    print "6"
+    #print "6"
     droppedPackets= speedSplit[3]
-    print "7"
+    #print "7"
     pingTime = speedSplit[0].split(" ")[1]
-    print "8"
+    #print "8"
     
     logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + pingTime + "," + droppedPackets + "\n"
     return logline
@@ -174,7 +175,7 @@ def StartLogging():
     sessionCookie = Login()
     gpsThread = InitiateGps()
     logFile = OpenLogFile()
-    for x in range(0,5):
+    for x in range(0,1):
         logFile.write(GetSigData(sessionCookie, gpsThread))
 
 def main():
@@ -182,8 +183,8 @@ def main():
     try:
         #CheckInternet()
         #ResetTime()
-        #StartLogging()
-        speedtest_cli2.speedtest()
+        StartLogging()
+        #speedtest_cli2.speedtest()
     except:
         print "Exception thrown: ", sys.exc_info()[0]
         subprocess.call(["sudo", "killall", "gpsd"])
