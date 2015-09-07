@@ -6,7 +6,7 @@
 #       python-ethtool
 #       python-gps
 #       (python-pip)
-# - extra python packages via pip:
+# - extra python packages included as source, originals can be downloaded via pip:
 #       speedtest-cli
 #       python-ping
 # - extra external packages:

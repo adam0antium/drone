@@ -5,6 +5,7 @@
 
 #to get a single branch use:
 #	git clone -b theBranchName --single-branch https://github.com/adam0antium/drone.git
+#NB this script will not work for other branches since the last call is to push to master
 
 from subprocess import call
 
