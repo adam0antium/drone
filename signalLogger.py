@@ -36,10 +36,10 @@ import datetime
 import ethtool
 import time
 import ping2
+import threading
 
 #gps stuff, not sure why this doesn't work when I do 'import gps' then add 'gps.' to commands, should be equivalent
 from gps import *
-import threading
 
 class GpsThreader(threading.Thread):
     #class to handle the gps data-updating thread. 
@@ -63,9 +63,13 @@ class GpsThreader(threading.Thread):
                 
 def InitiateGps():
     #initiate a new thread to keep track of latest gps data
-    print "IntitateGps()"
+    #print "IntitateGps()"
+
+    #kill the daemon to make sure everything is running clean
     subprocess.call(["sudo", "killall", "gpsd"])
     time.sleep(1)
+
+    #restart the daemon
     subprocess.call(["sudo", "gpsd", "/dev/ttyUSB0", "-F", "/var/run/gpsd.sock"])
     time.sleep(1)
     gpsThread = GpsThreader()
@@ -74,36 +78,42 @@ def InitiateGps():
     
 def GetAltitude(gpsThread):
     #get the current altitude value from the gps thread.
-    print "GetAltitude()"
+    #print "GetAltitude()"
     out = gpsThread.getData()
     if out != None:
         return str(out.get('alt'))   
 
 def GetSigData(loggedInCookie, gpsThread):
     #get signal data. Argument is cookie of admin-logged-in homepage.
-    print "GetSigData()"
+    #print "GetSigData()"
+
+    #this is the logged in webpage, which contains all data in the raw html, despite the presentation tabs
     targetUrl = "http://192.168.1.1/index.html"
-    print "1"
+    #print "1"
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
     doc = lxml.html.fromstring(homePage.text)
     altitude = str(GetAltitude(gpsThread))
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
-    print "2"
+    #print "2"
+
     #store original stdout so that it can be restored         
     oldStdOut = sys.stdout
-    print "22"
+    #print "22"
+
     #create an alternate stream to divert stdout into
     speedTestOutput = cStringIO.StringIO()    
-    print "222"
+    #print "222"
     sys.stdout= speedTestOutput    
+
     #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
     #server argument 2225 specifies the telstra Melbourne server to test against
     sys.argv = [sys.argv[0], '--simple', '--server',  '2225']
-    
     speedtest_cli2.speedtest()
+
     #pinging server for telstra speednet test
     ping2.verbose_ping('203.39.77.13', count=10)
+
     #reset stdout to original 
     sys.stdout = oldStdOut
     speeds = speedTestOutput.getvalue()
@@ -158,6 +168,7 @@ def ResetTime():
     #update the clock 
     print "ResetTime()"
     subprocess.call(["sudo", "service", "ntp", "restart"])
+
     #wait for time to update
     time.sleep(10)
 
