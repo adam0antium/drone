@@ -186,7 +186,7 @@ def StartLogging():
     sessionCookie = Login()
     gpsThread = InitiateGps()
     logFile = OpenLogFile()
-    for x in range(0,1):
+    for x in range(0,5):
         logFile.write(GetSigData(sessionCookie, gpsThread))
 
 def main():
