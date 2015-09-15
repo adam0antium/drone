@@ -7,12 +7,13 @@
 #	git clone -b theBranchName --single-branch https://github.com/adam0antium/drone.git
 #NB this script will not work for other branches since the last call is to push to master
 
-#to merge a branch into the master first checkout both versions, then switch to master
-#	with "git checkout master", then do a "git merge branch",then check with "git show"
+#to make a commit with all changes included use "git commit -a"
 
-from subprocess import call
+#to push the commit back to the remote use "push origin branchname" 
 
-print "\n*****\nfor new files first do:\ngit add [filename]\n*****\n"
+#to merge a branch into the master, first update to latest branch version with  
+# 	"git checkout branchname", "git pull", then get latest master version with 
+#	"git checkout mastername", "git pull", then do a "git merge branchname",then check with "git show"
+#	then delete local branch with "git branch -d branchname", then delete remote branch with 
+#	"git push origin :branchname"
 
-call(["git", "commit", "-a"]) 
-call(["git", "push", "origin", "master"])
