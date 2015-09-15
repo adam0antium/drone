@@ -3,9 +3,11 @@
 #to get the complete repo use:
 #   git clone https://github.com/adam0antium/drone.git
 
+#to create a new branch locally use "git checkout -b branchname", and to push it back to the 
+#	remote use "git push origin branchname"
+
 #to get a single branch use:
-#	git clone -b theBranchName --single-branch https://github.com/adam0antium/drone.git
-#NB this script will not work for other branches since the last call is to push to master
+#	git clone -b branchName --single-branch https://github.com/adam0antium/drone.git
 
 #to make a commit with all changes included use "git commit -a"
 
