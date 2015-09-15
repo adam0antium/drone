@@ -38,7 +38,8 @@ import time
 import ping2
 import threading
 
-#gps stuff, not sure why this doesn't work when I do 'import gps' then add 'gps.' to commands, should be equivalent
+#gps stuff, not sure why this doesn't work when I do 'import gps' then
+#   add 'gps.' to commands, should be equivalent
 from gps import *
 
 class GpsThreader(threading.Thread):
@@ -56,7 +57,8 @@ class GpsThreader(threading.Thread):
         try:
             while True:
                 self.data = self.gpsWatcher.next()
-            #a pause here might be good, depending on how quickly the gps is updating. Constant fetching may be unnecessary.
+            #a pause here might be good, depending on how quickly the
+            #   gps is updating. Constant fetching may be unnecessary.
                 #time.sleep(5)
         except StopIteration:
             pass
@@ -64,14 +66,7 @@ class GpsThreader(threading.Thread):
 def InitiateGps():
     #initiate a new thread to keep track of latest gps data
     #print "IntitateGps()"
-
-    #kill the daemon to make sure everything is running clean
-    subprocess.call(["sudo", "killall", "gpsd"])
-    time.sleep(1)
-
-    #restart the daemon
-    subprocess.call(["sudo", "gpsd", "/dev/ttyUSB0", "-F", "/var/run/gpsd.sock"])
-    time.sleep(1)
+    
     gpsThread = GpsThreader()
     gpsThread.start()
     return gpsThread
@@ -87,7 +82,8 @@ def GetSigData(loggedInCookie, gpsThread):
     #get signal data. Argument is cookie of admin-logged-in homepage.
     #print "GetSigData()"
 
-    #this is the logged in webpage, which contains all data in the raw html, despite the presentation tabs
+    #this is the logged in webpage, which contains all data in the raw
+    #   html, despite the presentation tabs
     targetUrl = "http://192.168.1.1/index.html"
     #print "1"
     homePage = requests.get(targetUrl, cookies = loggedInCookie)
@@ -106,7 +102,8 @@ def GetSigData(loggedInCookie, gpsThread):
     #print "222"
     sys.stdout= speedTestOutput    
 
-    #run speedtest with simple argument by manually altering argv, storing data in alternate stdout
+    #run speedtest with simple argument by manually altering argv,
+    #   storing data in alternate stdout
     #server argument 2225 specifies the telstra Melbourne server to test against
     sys.argv = [sys.argv[0], '--simple', '--server',  '2225']
     speedtest_cli2.speedtest()
@@ -129,7 +126,8 @@ def GetSigData(loggedInCookie, gpsThread):
     pingTime = speedSplit[0].split(" ")[1]
     #print "8"
     
-    logline = altitude + "," + rsrp + "," + rsrq + "," + upSpeed + "," + downSpeed + "," + pingTime + "," + droppedPackets + "\n"
+    logline = (altitude + "," + rsrp + "," + rsrq + "," + upSpeed + ","
+        + downSpeed + "," + pingTime + "," + droppedPackets + "\n")
     return logline
             
 def Login():
@@ -142,7 +140,8 @@ def Login():
 
     #pulled this post data format from the Telstra Challenge github repo 
     secToken = sessionCookie['sessionId'].split('-')[1]
-    postData = "token=" + secToken + "&ok_redirect=%2Findex.html&err_redirect=%2Findex.html&session.password=admin"
+    postData = ("token=" + secToken + "&ok_redirect=%2Findex.html"
+        "&err_redirect=%2Findex.html&session.password=admin")
     
     requests.post(configFormUrl, cookies = sessionCookie, data = postData)
     return sessionCookie
@@ -156,7 +155,8 @@ def OpenLogFile():
     logfileName = '/home/pi/Desktop/droneLogs/logfile0.log'
     while os.path.isfile(logfileName):
         lognumber += 1
-        logfileName = '/home/pi/Desktop/droneLogs/logfile' + str(lognumber) + '.log'
+        logfileName = ('/home/pi/Desktop/droneLogs/logfile' + str(lognumber)
+            + '.log')
     logFile = open(logfileName , 'w')
     
     #timestamp the logfile (maybe put this in filename)
@@ -186,19 +186,23 @@ def StartLogging():
     sessionCookie = Login()
     gpsThread = InitiateGps()
     logFile = OpenLogFile()
-    for x in range(0,5):
+    for x in range(0,1):
+        print str(datetime.datetime.now())
         logFile.write(GetSigData(sessionCookie, gpsThread))
 
 def main():
     #print "main"
     try:
+        StartLogging()
+
+        
+
+        #This stuff may not be needed anymore, better to check before starting logger
         #CheckInternet()
         #ResetTime()
-        StartLogging()
         #speedtest_cli2.speedtest()
     except:
         print "Exception thrown: ", sys.exc_info()[0]
-        subprocess.call(["sudo", "killall", "gpsd"])
 
 if __name__ == "__main__":
     main()
