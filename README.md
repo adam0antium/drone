@@ -11,3 +11,5 @@ This project looks at measuring signal data for mobile broadband network connect
  
  ##Software
  - Mainly python scripting at this stage to pull signal data from the wifi modem web interface, to operate the usb GPS, and to pull speed data from the python speedtest-cli module. 
+ - The main code is in **signalLogger.py**
+ - **ping2** and **speedtest_cli2** are slightly altered versions of packages from other authors
