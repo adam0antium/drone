@@ -37,6 +37,7 @@ import ethtool
 import time
 import ping2
 import threading
+import RPi.GPIO as gpio
 
 #gps stuff, not sure why this doesn't work when I do 'import gps' then
 #   add 'gps.' to commands, should be equivalent
@@ -57,12 +58,52 @@ class GpsThreader(threading.Thread):
         try:
             while True:
                 self.data = self.gpsWatcher.next()
+                initAlt = 0
             #a pause here might be good, depending on how quickly the
             #   gps is updating. Constant fetching may be unnecessary.
                 #time.sleep(5)
+                if self.data != None:
+                    alt = self.data.get('alt')
+                    if initAlt == 0:
+                        initAlt = alt
+                    if int('alt') > (initAlt + 10):
+                        ledThread = LedThreader()
+                        ledThread.start()
+                
         except StopIteration:
             pass
+
+class LedThreader(threading.Thread):
+    #class to handle the blinking LED for altitude information
+    def __init__(self):
+        threading.Thread.__init__(self)
+        gpio.setmode(gpio.BOARD)
+        gpio.setup(11, gpio.OUT)
+        gpio.output(11, gpio.LOW)
+        self.isThreadCancelled = False
+    def run(self):
+        try:
+            isLedOn = False
+            while True:
+                if self.isThreadCancelled:
+                    gpio.output(11, gpio.LOW)
+                    
+                    break
+                if isLedOn:
+                    gpio.output(11, gpio.LOW)
+                    
+                    isLedOn = False
+                else:
+                    gpio.output(11, gpio.HIGH)
+                    isLedOn =True
+                time.sleep(0.25)
+        except StopIteration:
+                pass
+
+    def stop(self):
+        self.isThreadCancelled = True
                 
+  
 def InitiateGps():
     #initiate a new thread to keep track of latest gps data
     #print "IntitateGps()"
@@ -194,14 +235,21 @@ def main():
     #print "main"
     try:
         StartLogging()
-
-        
+        #ledThread = LedThreader()
+        #ledThread.start()
+        #print "1"
+        #time.sleep(10)
+        #print "2"
+        #ledThread.stop()
+        #print "3"
+        #time.sleep(10)
 
         #This stuff may not be needed anymore, better to check before starting logger
         #CheckInternet()
         #ResetTime()
         #speedtest_cli2.speedtest()
     except:
+        #ledThread.stop()
         print "Exception thrown: ", sys.exc_info()[0]
 
 if __name__ == "__main__":
