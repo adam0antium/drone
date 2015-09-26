@@ -75,6 +75,8 @@ class LedThreader(threading.Thread):
         gpio.setup(11, gpio.OUT)
         gpio.output(11, gpio.LOW)
         self.isThreadCancelled = False
+        self.setDaemon(True)
+        
     def run(self):
         try:
             isLedOn = False
@@ -92,10 +94,13 @@ class LedThreader(threading.Thread):
                     isLedOn =True
                 time.sleep(0.25)
         except StopIteration:
-                pass
+            pass
+        except:
+            self.stop()
 
     def stop(self):
         self.isThreadCancelled = True
+        gpio.cleanup()
                 
   
 def InitiateGps():
@@ -246,6 +251,14 @@ def StartLogging():
 def main():
     #print "main"
     try:
+        #gpio.setmode(gpio.BOARD)
+        #gpio.setup(11, gpio.OUT)
+        #gpio.output(11, gpio.HIGH)
+        print "1"
+        ledThread = LedThreader()
+        print "2"
+        ledThread.start()
+        print "3"
         StartLogging()
         #ledThread = LedThreader()
         #ledThread.start()
@@ -261,8 +274,9 @@ def main():
         #ResetTime()
         #speedtest_cli2.speedtest()
     except:
-        #ledThread.stop()
+        ledThread.stop()
         print "Exception thrown: ", sys.exc_info()[0]
+        #ledThread.stop()
         sys.exit()
 
 if __name__ == "__main__":
