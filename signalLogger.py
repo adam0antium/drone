@@ -38,6 +38,7 @@ import time
 import ping2
 import threading
 import RPi.GPIO as gpio
+import helper
 
 #gps stuff, not sure why this doesn't work when I do 'import gps' then
 #   add 'gps.' to commands, should be equivalent
@@ -58,15 +59,20 @@ class GpsThreader(threading.Thread):
         try:
             while True:
                 self.data = self.gpsWatcher.next()
+                altStr = None
                 initAlt = 0
+                alt = 0
             #a pause here might be good, depending on how quickly the
             #   gps is updating. Constant fetching may be unnecessary.
                 #time.sleep(5)
                 if self.data != None:
-                    alt = self.data.get('alt')
-                    if initAlt == 0:
-                        initAlt = alt
-                    if int('alt') > (initAlt + 10):
+                    altStr = self.data.get('alt')
+                    if altStr != None:
+                        if initAlt == 0:
+                            initAlt = int(altStr)
+                        else:
+                            alt = int(altStr)
+                    if alt > (initAlt + 10):
                         ledThread = LedThreader()
                         ledThread.start()
                 
@@ -135,40 +141,52 @@ def GetSigData(loggedInCookie, gpsThread):
     #print "2"
 
     #store original stdout so that it can be restored         
-    oldStdOut = sys.stdout
+    #oldStdOut = sys.stdout
     #print "22"
 
     #create an alternate stream to divert stdout into
-    speedTestOutput = cStringIO.StringIO()    
+    #speedTestOutput = cStringIO.StringIO()    
     #print "222"
-    sys.stdout= speedTestOutput    
+    #sys.stdout= speedTestOutput    
 
     #run speedtest with simple argument by manually altering argv,
     #   storing data in alternate stdout
     #server argument 2225 specifies the telstra Melbourne server to test against
-    sys.argv = [sys.argv[0], '--simple', '--server',  '2225']
-    speedtest_cli2.speedtest()
+    #sys.argv = [sys.argv[0], '--simple', '--server',  '2225']
+    #speedtest_cli2.speedtest()
 
     #pinging server for telstra speednet test
-    ping2.verbose_ping('203.39.77.13', count=10)
+    #ping2.verbose_ping('203.39.77.13', count=10)
 
     #reset stdout to original 
-    sys.stdout = oldStdOut
-    speeds = speedTestOutput.getvalue()
+    #sys.stdout = oldStdOut
+    #speeds = speedTestOutput.getvalue()
     #print speeds
-    speedSplit = speeds.split("\n")
+    #speedSplit = speeds.split("\n")
     #print speedSplit
-    upSpeed = speedSplit[2].split(" ")[1]
+    #upSpeed = speedSplit[2].split(" ")[1]
     #print "5"
-    downSpeed = speedSplit[1].split(" ")[1]
+    #downSpeed = speedSplit[1].split(" ")[1]
     #print "6"
-    droppedPackets= speedSplit[3]
+    #droppedPackets= speedSplit[3]
     #print "7"
-    pingTime = speedSplit[0].split(" ")[1]
+    #pingTime = speedSplit[0].split(" ")[1]
     #print "8"
+    speeds = helper.QuickSpeedTest()
+    downSpeed = str(speeds['downloadSpeed'])
+    #print "download speed: " + downSpeed
+    upSpeed = str(speeds['uploadSpeed'])
+    #print "upload speed: " + upSpeed
+    pingTime = str(speeds['latency'])
+    #print "ping time: " + pingTime
+    packetsReceived = str(speeds['packetsReceived'])
+    #print "packets received: " + packetsReceived
     
     logline = (altitude + "," + rsrp + "," + rsrq + "," + upSpeed + ","
-        + downSpeed + "," + pingTime + "," + droppedPackets + "\n")
+        + downSpeed + "," + pingTime + "," + packetsReceived + "\n")
+
+    print logline
+    
     return logline
             
 def Login():
@@ -227,7 +245,7 @@ def StartLogging():
     sessionCookie = Login()
     gpsThread = InitiateGps()
     logFile = OpenLogFile()
-    for x in range(0,1):
+    for x in range(0,5):
         print str(datetime.datetime.now())
         logFile.write(GetSigData(sessionCookie, gpsThread))
 
