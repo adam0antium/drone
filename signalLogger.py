@@ -59,23 +59,7 @@ class GpsThreader(threading.Thread):
         try:
             while True:
                 self.data = self.gpsWatcher.next()
-                altStr = None
-                initAlt = 0
-                alt = 0
-            #a pause here might be good, depending on how quickly the
-            #   gps is updating. Constant fetching may be unnecessary.
-                #time.sleep(5)
-                if self.data != None:
-                    altStr = self.data.get('alt')
-                    if altStr != None:
-                        if initAlt == 0:
-                            initAlt = int(altStr)
-                        else:
-                            alt = int(altStr)
-                    if alt > (initAlt + 10):
-                        ledThread = LedThreader()
-                        ledThread.start()
-                
+                                
         except StopIteration:
             pass
 
@@ -218,8 +202,14 @@ def OpenLogFile():
             + '.log')
     logFile = open(logfileName , 'w')
     
-    #timestamp the logfile (maybe put this in filename)
-    logFile.write(str(datetime.datetime.now()) + "\n")
+    #timestamp the logfile with UTC (maybe put this in filename) 
+    #logFile.write(str(datetime.datetime.now()) + "\n")
+
+    #tag output file with local time instead of UTC
+    localTime = subprocess.check_output(["TZ='Australia/Melbourne' date"]
+        , shell=True)
+
+    logFile.write(localTime)
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
 
