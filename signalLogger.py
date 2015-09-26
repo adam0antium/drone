@@ -52,6 +52,10 @@ class GpsThreader(threading.Thread):
         self.data = None
         self.gpsWatcher.next()
 
+        #this is important for the thread to close when the main program is
+        #   stopped by Ctrl-c for instance
+        self.setDaemon(True)
+
     def getData(self):
         return self.data
     
@@ -235,7 +239,7 @@ def StartLogging():
     sessionCookie = Login()
     gpsThread = InitiateGps()
     logFile = OpenLogFile()
-    for x in range(0,5):
+    while(True):
         print str(datetime.datetime.now())
         logFile.write(GetSigData(sessionCookie, gpsThread))
 
@@ -259,6 +263,7 @@ def main():
     except:
         #ledThread.stop()
         print "Exception thrown: ", sys.exc_info()[0]
+        sys.exit()
 
 if __name__ == "__main__":
     main()
