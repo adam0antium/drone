@@ -105,7 +105,7 @@ class LedThreader(threading.Thread):
   
 def InitiateGps():
     #initiate a new thread to keep track of latest gps data
-    #print "IntitateGps()"
+    print "IntitateGps()"
     
     gpsThread = GpsThreader()
     gpsThread.start()
@@ -113,14 +113,14 @@ def InitiateGps():
     
 def GetAltitude(gpsThread):
     #get the current altitude value from the gps thread.
-    #print "GetAltitude()"
+    print "GetAltitude()"
     out = gpsThread.getData()
     if out != None:
         return str(out.get('alt'))   
 
 def GetSigData(loggedInCookie, gpsThread):
     #get signal data. Argument is cookie of admin-logged-in homepage.
-    #print "GetSigData()"
+    print "GetSigData()"
 
     #this is the logged in webpage, which contains all data in the raw
     #   html, despite the presentation tabs
@@ -187,15 +187,17 @@ def Login():
     print "Login()"
     targetUrl = "http://192.168.1.1/index.html"
     configFormUrl = "http://192.168.1.1/Forms/config"
-    unAuthResponse = requests.get(targetUrl)
+    unAuthResponse = requests.get(targetUrl, timeout=1)
     sessionCookie = unAuthResponse.cookies
 
     #pulled this post data format from the Telstra Challenge github repo 
     secToken = sessionCookie['sessionId'].split('-')[1]
+
     postData = ("token=" + secToken + "&ok_redirect=%2Findex.html"
         "&err_redirect=%2Findex.html&session.password=admin")
-    
+
     requests.post(configFormUrl, cookies = sessionCookie, data = postData)
+
     return sessionCookie
 
 def OpenLogFile():
@@ -254,11 +256,11 @@ def main():
         #gpio.setmode(gpio.BOARD)
         #gpio.setup(11, gpio.OUT)
         #gpio.output(11, gpio.HIGH)
-        print "1"
+        #print "1"
         ledThread = LedThreader()
-        print "2"
+        #print "2"
         ledThread.start()
-        print "3"
+        #print "3"
         StartLogging()
         #ledThread = LedThreader()
         #ledThread.start()
