@@ -116,19 +116,26 @@ def GetAltitude(gpsThread):
     print "GetAltitude()"
     out = gpsThread.getData()
     if out != None:
-        return str(out.get('alt'))   
+        return str(out.get('alt'))
+    #else:
+      #  helper.ResetGps()
 
-def GetSigData(loggedInCookie, gpsThread):
+def GetSigData(loggedInCookie):
     #get signal data. Argument is cookie of admin-logged-in homepage.
     print "GetSigData()"
-
+    #logfile.write("/n1")
     #this is the logged in webpage, which contains all data in the raw
     #   html, despite the presentation tabs
     targetUrl = "http://192.168.1.1/index.html"
     #print "1"
-    homePage = requests.get(targetUrl, cookies = loggedInCookie)
+    homePage = requests.get(targetUrl, cookies = loggedInCookie, timeout=1)
+    #logfile.write("2")
     doc = lxml.html.fromstring(homePage.text)
-    altitude = str(GetAltitude(gpsThread))
+    #altitude = str(GetAltitude(gpsThread))
+    #logfile.write("3")
+    
+    altitude = str(helper.GetAlt())
+    #logfile.write("4")
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
     #print "2"
@@ -196,7 +203,8 @@ def Login():
     postData = ("token=" + secToken + "&ok_redirect=%2Findex.html"
         "&err_redirect=%2Findex.html&session.password=admin")
 
-    requests.post(configFormUrl, cookies = sessionCookie, data = postData)
+    requests.post(configFormUrl, cookies = sessionCookie,
+                  data = postData, timeout=1)
 
     return sessionCookie
 
@@ -214,13 +222,13 @@ def OpenLogFile():
     logFile = open(logfileName , 'w')
     
     #timestamp the logfile with UTC (maybe put this in filename) 
-    #logFile.write(str(datetime.datetime.now()) + "\n")
+    logFile.write(str(datetime.datetime.now()) + "\n")
 
     #tag output file with local time instead of UTC
-    localTime = subprocess.check_output(["TZ='Australia/Melbourne' date"]
-        , shell=True)
+    #localTime = subprocess.check_output(["TZ='Australia/Melbourne' date"]
+    #    , shell=True)
 
-    logFile.write(localTime)
+    #logFile.write(localTime)
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
     return logFile
 
@@ -244,15 +252,18 @@ def StartLogging():
     #looping logging function
     print "StartLogging()"
     sessionCookie = Login()
-    gpsThread = InitiateGps()
+    #gpsThread = InitiateGps()
+    #time.sleep(2)
     logFile = OpenLogFile()
     while(True):
         print str(datetime.datetime.now())
-        logFile.write(GetSigData(sessionCookie, gpsThread))
+        #logFile.write("aaa")
+        logFile.write(GetSigData(sessionCookie))
 
 def main():
     #print "main"
     try:
+        #helper.ResetGps()
         #gpio.setmode(gpio.BOARD)
         #gpio.setup(11, gpio.OUT)
         #gpio.output(11, gpio.HIGH)
