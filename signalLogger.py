@@ -24,6 +24,7 @@
 #       $ sudo killall gpsd
 #   and redo above gpsd command to start.
 #
+from smbus import SMBus
 
 import lxml.html
 import requests
@@ -38,11 +39,108 @@ import time
 import ping2
 import threading
 import RPi.GPIO as gpio
-import helper
 
 #gps stuff, not sure why this doesn't work when I do 'import gps' then
 #   add 'gps.' to commands, should be equivalent
 from gps import *
+
+def QuickSpeedTest():
+    #a much faster executing, but less accurate speedtest
+    print "QuickSpeedTest()"
+    #the telstra hosted speedtest site, corresponding to speedtest
+    #   server 2225
+    telstraTestUrl = "http://mel1.speedtest.telstra.net/speedtest/"
+
+    #one of a number of files hosted on the server this one ~2MB
+    #   for others try dimensions 500,1500,2000,2500,3000,3500,4000
+    downloadFileName = "random1000x1000.jpg"
+
+    dlSpeedString = subprocess.check_output(["curl", telstraTestUrl
+        + downloadFileName, "-o", "this.jpg", "--silent", "-w"
+        , "%{speed_download}", "-m", "10"])
+      
+    ulSpeedString = subprocess.check_output(["curl", "-T", "this.jpg"
+        , "-o", "/dev/null", telstraTestUrl + "upload.php", "-w"
+        , "%{speed_upload}", "--silent", "-m", "10"])
+
+    pingString = subprocess.check_output(["ping", "203.39.77.13"
+        , "-c", "3", "-q"])
+    
+    #get the average round trip ping time
+    latencyString = pingString.split("/")[4]
+    packetsReceivedStr = pingString.split(",")[1]
+    packetsReceivedStr = packetsReceivedStr.split(" ")[1]
+    
+    packetsReceived = int(packetsReceivedStr)
+    latency = float(latencyString)
+    downloadSpeed = float(dlSpeedString)
+    uploadSpeed = float(ulSpeedString)
+
+    return {'downloadSpeed': downloadSpeed, 'uploadSpeed': uploadSpeed
+        , 'latency': latency, 'packetsReceived': packetsReceived}    
+    
+
+
+def GetAlt():
+    #get the altitude from the MPL3115a2 device
+    print "GetAlt()"
+    #logfile.write("5")
+    #sudo sh -c " echo -n 1 > /sys/module/i2c_bcm2708/parameters/combined"
+
+    #subprocess.call(["sudo sh -c ""echo -n 1 > /sys/module/i2c_bcm2708/parameters/combined"" "], shell=True)
+
+    #subprocess.call(["./enAlt"])
+    
+    #device address and register addresses
+    altAddress = 0x60
+    ctrlReg1 = 0x26
+    ptDataCfg = 0x13
+
+    #values
+    oversample128 = 0x38
+    oneShot= 0x02
+    altMode = 0x80
+    
+    bus = SMBus(1)
+    #logfile.write("6")
+    for i in range(0,5):
+        whoAmI = bus.read_byte_data(altAddress, 0x0c)
+        if whoAmI == 0xc4:
+            break
+        elif i == 4:
+            #logfile.write("fi")
+            sys.exit()
+        else:
+            time.sleep(0.5)
+    bus.write_byte_data(altAddress, ptDataCfg, 0x07)        
+    #logfile.write("7")    
+
+    oldSetting = bus.read_byte_data(altAddress, ctrlReg1)
+    #logfile.write("7a")
+    #time.sleep(1)
+    newSetting = oldSetting | oversample128 | oneShot | altMode
+    #logfile.write("7b")
+    #time.sleep(1)
+    bus.write_byte_data(altAddress, ctrlReg1, newSetting)
+
+    #logfile.write("8")
+    #event flags
+    #bus.write_byte_data(altAddress, ptDataCfg, 0x07)
+    #logfile.write("9")
+    status = bus.read_byte_data(altAddress, 0x00)
+    while(status & 0x08) ==0:
+        status = bus.read_byte_data(altAddress, 0x00)
+        time.sleep(0.5)
+    #logfile.write("10")
+    msb, csb, lsb = bus.read_i2c_block_data(altAddress, 0x01, 3)
+    #logfile.write("11")
+    alt = ((msb<<24) | (csb<<16) | (lsb<<8)) / 65536.
+    #logfile.write("12")
+    if alt > (1<<15):
+        alt -= 1<<16
+    #logfile.write("13")
+    
+    return alt    
 
 class GpsThreader(threading.Thread):
     #class to handle the gps data-updating thread. 
@@ -95,9 +193,7 @@ class LedThreader(threading.Thread):
                 time.sleep(0.25)
         except StopIteration:
             pass
-        except:
-            self.stop()
-
+        
     def stop(self):
         self.isThreadCancelled = True
         gpio.cleanup()
@@ -134,7 +230,7 @@ def GetSigData(loggedInCookie):
     #altitude = str(GetAltitude(gpsThread))
     #logfile.write("3")
     
-    altitude = str(helper.GetAlt())
+    altitude = str(GetAlt())
     #logfile.write("4")
     rsrp = doc.find_class('m_wwan_signalStrength_rsrp')[0].text
     rsrq = doc.find_class('m_wwan_signalStrength_rsrq')[0].text
@@ -172,7 +268,7 @@ def GetSigData(loggedInCookie):
     #print "7"
     #pingTime = speedSplit[0].split(" ")[1]
     #print "8"
-    speeds = helper.QuickSpeedTest()
+    speeds = QuickSpeedTest()
     downSpeed = str(speeds['downloadSpeed'])
     #print "download speed: " + downSpeed
     upSpeed = str(speeds['uploadSpeed'])
@@ -208,7 +304,7 @@ def Login():
 
     return sessionCookie
 
-def OpenLogFile():
+def CreateLogFile():
     #set up the log file for writing to
     print "OpenLogFile()"
     if not os.path.isdir('/home/pi/Desktop/droneLogs'):
@@ -230,7 +326,8 @@ def OpenLogFile():
 
     #logFile.write(localTime)
     logFile.write("altitude,rsrp,rsrq,upSpeed,downSpeed,ping,droppedPackets\n")
-    return logFile
+    logFile.close()
+    return logfileName
 
 def ResetTime():
     #update the clock 
@@ -254,11 +351,24 @@ def StartLogging():
     sessionCookie = Login()
     #gpsThread = InitiateGps()
     #time.sleep(2)
-    logFile = OpenLogFile()
+    logFileName = CreateLogFile()
+    print "1"
+    logFile = open(logFileName, 'a')
+    print "2"
+    logFile.close()
+    print "3"
     while(True):
-        print str(datetime.datetime.now())
+        try:
+            out = GetSigData(sessionCookie)
+        except:
+            logFile = open(logFileName, 'a')
+            logFile.write(sys.exc_info()[0])
+            sys.exit()
+        logFile = open(logFileName, 'a')        
+        #print str(datetime.datetime.now())
         #logFile.write("aaa")
-        logFile.write(GetSigData(sessionCookie))
+        logFile.write(out)
+        logFile.close()
 
 def main():
     #print "main"
