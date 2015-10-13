@@ -19,3 +19,7 @@
 #	then delete local branch with "git branch -d branchname", then delete remote branch with 
 #	"git push origin :branchname"
 
+#to tag (annotated) use "git tag -a tagName -m 'git tag message' "
+# 	then to push the tag to remote use 'git push origin tag tagName'
+#	or also can use 'git push --follow-tags' which will push commits and also tags that are annotated and reachable
+
