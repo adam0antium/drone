@@ -9,5 +9,5 @@ This project looks at measuring signal data for mobile broadband network connect
  - Turnigy quadcopter
  
  ##Software
- - Mainly python scripting at this stage to pull signal data from the wifi modem web interface, to operate the usb GPS, and to pull speed data from the python speedtest-cli module. 
+ - Mainly python scripting with some embedded shell commands, to pull signal data from the wifi modem web interface, test the upload and download speeds and latency, and get the altitude from an MPL3115A2 sensor via I2C. 
  - The main code is in **signalLogger.py**
