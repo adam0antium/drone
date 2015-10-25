@@ -19,3 +19,8 @@
 #	then delete local branch with "git branch -d branchname", then delete remote branch with 
 #	"git push origin :branchname"
 
+#use meld to combine files from different branches to current working directory files
+#	git difftool --tool=meld automated:signalLogger.py ./signalLogger.py
+
+#after a merge with conflicts fix them with a mergetool eg meld or kdiff3
+#	git mergetool -t meld
