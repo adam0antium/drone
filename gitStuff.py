@@ -19,8 +19,12 @@
 #	then delete local branch with "git branch -d branchname", then delete remote branch with 
 #	"git push origin :branchname"
 
-#use meld to combine files from different branches to current working directory files
-#	git difftool --tool=meld automated:signalLogger.py ./signalLogger.py
+#to tag (annotated) use "git tag -a tagName -m 'git tag message' "
+# 	then to push the tag to remote use 'git push origin tag tagName'
+#	or also can use 'git push --follow-tags' which will push commits and also tags that are annotated and reachable
 
 #after a merge with conflicts fix them with a mergetool eg meld or kdiff3
 #	git mergetool -t meld
+
+#use meld to combine files from different branches to current working directory files
+#	git difftool --tool=meld automated:signalLogger.py ./signalLogger.py
